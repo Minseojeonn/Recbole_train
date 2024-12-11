@@ -3,3 +3,4 @@ experiments/*
 log/*
 saved/*
 certification.json
+*.out

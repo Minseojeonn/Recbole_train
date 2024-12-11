@@ -19,13 +19,11 @@ def main(model_name='LightGCN', dataset_name='ml-100k', **args):
     config["reproducibility"] = False
     config["show_progress"] = False
     config["worker"] = 8
-    for i in args:
-        if args[i].isdigit():
+    for i in dict(args):
+        if str(args[i]).isdigit():
             config[i] = int(args[i])
         else:
             config[i] = args[i]
-        
-    breakpoint()
     # init random seed
     init_seed(config['seed'], config['reproducibility'])
     # logger initialization
@@ -59,6 +57,8 @@ def main(model_name='LightGCN', dataset_name='ml-100k', **args):
     # model evaluation
     test_result = trainer.evaluate(test_data)
     result_values = []
+    for key in args:
+        result_values.append(args[key])
     for key in best_valid_result:
         result_values.append(best_valid_result[key])
     for key in test_result:

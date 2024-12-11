@@ -9,10 +9,10 @@ do
     do
         for emdim in 32, 64, 128
         do
-            python -m train --model_name LightGCN --dataset_name yelp2018 --n_layers $layer --learning_rate $lr --embedding_size $emdim
+            python -m train --model_name LightGCN --dataset_name ml-100k --n_layers $layer --learning_rate $lr --embedding_size $emdim
         done
     done
 done
 
-python -m notify LGCN yelp2018
+python -m notify LGCN ml-100k
 exit 0
