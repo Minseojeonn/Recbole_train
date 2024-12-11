@@ -9,7 +9,9 @@ from recbole.trainer import Trainer
 from recbole.utils import init_seed, init_logger
 
 
-def main(model_name='LightGCN', dataset_name='ml-100k'):
+def main(model_name='LightGCN', dataset_name='ml-100k', **args):
+    
+    
     # configurations initialization
     config = Config(model=model_name, dataset=dataset_name)
     config["metrics"].append("GAUC")
@@ -17,6 +19,13 @@ def main(model_name='LightGCN', dataset_name='ml-100k'):
     config["reproducibility"] = False
     config["show_progress"] = False
     config["worker"] = 8
+    for i in args:
+        if args[i].isdigit():
+            config[i] = int(args[i])
+        else:
+            config[i] = args[i]
+        
+    breakpoint()
     # init random seed
     init_seed(config['seed'], config['reproducibility'])
     # logger initialization
