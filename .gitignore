@@ -2,4 +2,4 @@ dataset/*
 experiments/*
 log/*
 saved/*
-notify.py
+certification.json
