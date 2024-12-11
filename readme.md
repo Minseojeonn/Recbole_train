@@ -1,8 +1,8 @@
 ## certification.json 
 
-{
-    "email_id": "*",
-    "email_pw": "*",
-    "target_email": "*",
-    "sender_email": "*"
-}
+{<br/> 
+    "email_id": "*",<br/> 
+    "email_pw": "*",<br/> 
+    "target_email": "*",<br/> 
+    "sender_email": "*"<br/> 
+}<br/> 
