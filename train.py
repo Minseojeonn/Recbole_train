@@ -8,22 +8,28 @@ from recbole.model.general_recommender import LightGCN, BPR
 from recbole.trainer import Trainer
 from recbole.utils import init_seed, init_logger
 
+def avoid_duple(model_name='LightGCN', dataset_name='ml-100k', **args):
+    global model_name_g, dataset_name_g
+    global args_g
+    model_name_g = model_name
+    dataset_name_g = dataset_name
+    args_g = args 
+    main()
 
-def main(model_name='LightGCN', dataset_name='ml-100k', **args):
-    
-    
+def main():
     # configurations initialization
-    config = Config(model=model_name, dataset=dataset_name)
+    global model_name_g, dataset_name_g, args_g
+    config = Config(model=model_name_g, dataset=dataset_name_g)
     config["metrics"].append("GAUC")
     config["topk"] = [10, 20, 40]
     config["reproducibility"] = False
     config["show_progress"] = False
     config["worker"] = 8
-    for i in dict(args):
-        if str(args[i]).isdigit():
-            config[i] = int(args[i])
+    for i in dict(args_g):
+        if str(args_g[i]).isdigit():
+            config[i] = int(args_g[i])
         else:
-            config[i] = args[i]
+            config[i] = args_g[i]
     # init random seed
     init_seed(config['seed'], config['reproducibility'])
     # logger initialization
@@ -45,7 +51,7 @@ def main(model_name='LightGCN', dataset_name='ml-100k', **args):
         'LightGCN': LightGCN,
         'BPR': BPR,
     }
-    model = model_dict[model_name](config, train_data.dataset).to(config['device'])
+    model = model_dict[model_name_g](config, train_data.dataset).to(config['device'])
     logger.info(model)
 
     # trainer loading and initialization
@@ -57,14 +63,14 @@ def main(model_name='LightGCN', dataset_name='ml-100k', **args):
     # model evaluation
     test_result = trainer.evaluate(test_data)
     result_values = []
-    for key in args:
-        result_values.append(args[key])
+    for key in args_g:
+        result_values.append(args_g[key])
     for key in best_valid_result:
         result_values.append(best_valid_result[key])
     for key in test_result:
         result_values.append(test_result[key])
     
-    file_name = f'./experiments/{model_name}_{dataset_name}.csv'
+    file_name = f'./experiments/{model_name_g}_{dataset_name_g}.csv'
     if os.path.isfile(file_name):
         with open(file_name, 'a') as f:
             f.write(','.join(map(str, result_values)) + '\n')
@@ -77,4 +83,4 @@ def main(model_name='LightGCN', dataset_name='ml-100k', **args):
        
     
 if __name__ == '__main__':
-    Fire(main)
+        Fire(avoid_duple())
