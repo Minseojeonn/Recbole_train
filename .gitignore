@@ -1,0 +1,5 @@
+dataset/*
+experiments/*
+log/*
+saved/*
+notify.py
