@@ -25,7 +25,7 @@ def send(arg1, arg2):
         </html>
     """.format(
     title = f"{arg1} 실험 종료",
-    etc = f"실험 끝났다."
+    etc = f"{arg2} 실험 끝났다."
     )
 
     mimetext = MIMEText(content,'html')
