@@ -2,7 +2,7 @@
 #SBATCH --gpus=1
 #SBATCH --cpus-per-gpu=8
 #SBATCH -J ENMF_epnions
-
+#SBATCH -o slurm_logs/%x-%j.out
 for negative_socre in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
 do
     for dropout_rate in 0.1 0.3 0.5 0.7

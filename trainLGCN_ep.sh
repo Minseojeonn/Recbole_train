@@ -2,7 +2,7 @@
 #SBATCH --gpus=1
 #SBATCH --cpus-per-gpu=8
 #SBATCH -J LGCN_epinions
-
+#SBATCH -o slurm_logs/%x-%j.out
 for layer in 1, 2, 3
 do
     for lr in 0.01, 0.001
