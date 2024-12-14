@@ -11,6 +11,7 @@ from recbole.utils import init_seed, init_logger
 def avoid_duple(model_name='LightGCN', dataset_name='ml-100k', **args):
     global model_name_g, dataset_name_g
     global args_g
+    breakpoint()
     model_name_g = model_name
     dataset_name_g = dataset_name
     args_g = args 
@@ -19,6 +20,7 @@ def avoid_duple(model_name='LightGCN', dataset_name='ml-100k', **args):
 def main():
     # configurations initialization
     global model_name_g, dataset_name_g, args_g
+    breakpoint()
     config = Config(model=model_name_g, dataset=dataset_name_g)
     config["metrics"].append("GAUC")
     config["topk"] = [10, 20, 40]
@@ -86,4 +88,4 @@ def main():
        
     
 if __name__ == '__main__':
-        Fire(avoid_duple())
+        Fire(avoid_duple)
