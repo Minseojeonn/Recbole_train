@@ -9,7 +9,6 @@ import recbole_debias.evaluator.metrics
 def update_metrics():
     metric_module_name = metrics.__name__
     smaller_metrics, metric_information, metric_types, metrics_dict = register.cluster_info(metric_module_name)
-
     register.smaller_metrics += smaller_metrics
     register.metric_information.update(metric_information)
     register.metric_types.update(metric_types)

@@ -32,7 +32,6 @@ class MF(DebiasedRecommender):
 
         # load parameters info
         self.embedding_size = config['embedding_size']
-
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)

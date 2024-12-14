@@ -5,7 +5,7 @@
 
 import os
 from recbole.config.configurator import Config as RecBole_Config
-
+from pathlib import Path
 from recbole_debias.utils import get_model
 from recbole_debias.evaluator import update_metrics
 
@@ -65,10 +65,11 @@ class Config(RecBole_Config):
     def _load_internal_config_dict(self, model, model_class, dataset):  # 加载内部已有配置
         super()._load_internal_config_dict(model, model_class, dataset)
         current_path = os.path.dirname(os.path.realpath(__file__))
-        overall_init_file = os.path.join(current_path, '../properties/overall.yaml')
-        model_init_file = os.path.join(current_path, '../properties/model/' + model + '.yaml')
-        sample_init_file = os.path.join(current_path, '../properties/dataset/sample.yaml')
-        dataset_init_file = os.path.join(current_path, '../properties/dataset/' + dataset + '.yaml')
+        current_path = str(Path(current_path).parent)
+        overall_init_file = os.path.join(current_path, 'properties/overall.yaml')
+        model_init_file = os.path.join(current_path, 'properties/model/' + model + '.yaml')
+        sample_init_file = os.path.join(current_path, 'properties/dataset/sample.yaml')
+        dataset_init_file = os.path.join(current_path, 'properties/dataset/' + dataset + '.yaml')
 
         for file in [overall_init_file, model_init_file, sample_init_file, dataset_init_file]:
             if os.path.isfile(file):
@@ -77,5 +78,4 @@ class Config(RecBole_Config):
                     self.parameters['Dataset'] += [
                         key for key in config_dict.keys() if key not in self.parameters['Dataset']
                     ]
-
         self.internal_config_dict['MODEL_TYPE'] = model_class.type

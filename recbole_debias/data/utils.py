@@ -15,7 +15,6 @@ from recbole.sampler import Sampler, RepeatableSampler
 
 from recbole_debias.data.dataloader import *
 from recbole_debias.utils import ModelType
-from recbole_debias.sampler import DICESampler
 
 
 def create_dataset(config):
@@ -88,8 +87,8 @@ def data_preparation(config, dataset):
         train_sampler, valid_sampler, test_sampler = create_samplers(config, dataset, built_datasets)
 
         train_data = get_dataloader(config, 'train')(config, train_dataset, train_sampler, shuffle=config["shuffle"])
-        valid_data = get_dataloader(config, 'evaluation')(config, valid_dataset, valid_sampler, shuffle=False)
-        test_data = get_dataloader(config, 'evaluation')(config, test_dataset, test_sampler, shuffle=False)
+        valid_data = get_dataloader(config, 'valid')(config, valid_dataset, valid_sampler, shuffle=False)
+        test_data = get_dataloader(config, 'test')(config, test_dataset, test_sampler, shuffle=False)
         if config['save_dataloaders']:
             save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
 
@@ -128,7 +127,7 @@ def get_dataloader(config, phase):
     register_table = {
         "DICE": _get_DICE_dataloader,
     }
-
+    
     if config['model'] in register_table:
         return register_table[config['model']](config, phase)
 
@@ -137,7 +136,8 @@ def get_dataloader(config, phase):
         if model_type == ModelType.DEBIAS:
             return DebiasDataloader
     else:
-        eval_mode = config["eval_args"]["mode"]
+        eval_mode = config["eval_args"]["mode"][phase]
+        
         if eval_mode == "full":
             return FullSortEvalDataLoader
         else:
@@ -163,6 +163,35 @@ def _get_DICE_dataloader(config, phase):
         else:
             return NegSampleEvalDataLoader
 
+def _create_sampler(
+    dataset,
+    built_datasets,
+    distribution: str,
+    repeatable: bool,
+    alpha: float = 1.0,
+    base_sampler=None,
+):
+    phases = ["train", "valid", "test"]
+    sampler = None
+    if distribution != "none":
+        if base_sampler is not None:
+            base_sampler.set_distribution(distribution)
+            return base_sampler
+        if not repeatable:
+            sampler = Sampler(
+                phases,
+                built_datasets,
+                distribution,
+                alpha,
+            )
+        else:
+            sampler = RepeatableSampler(
+                phases,
+                dataset,
+                distribution,
+                alpha,
+            )
+    return sampler
 
 def create_samplers(config, dataset, built_datasets):
     """Create sampler for training, validation and testing.
@@ -181,29 +210,39 @@ def create_samplers(config, dataset, built_datasets):
     """
     phases = ['train', 'valid', 'test']
     train_neg_sample_args = config['train_neg_sample_args']
-    eval_neg_sample_args = config['eval_neg_sample_args']
+    eval_neg_sample_args = config['valid_neg_sample_args']
     sampler = None
     train_sampler, valid_sampler, test_sampler = None, None, None
 
-    if train_neg_sample_args['distribution'] != 'none':
-        if config['model'] == 'DICE':
-            sampler = DICESampler(phases, built_datasets, train_neg_sample_args['distribution'], train_neg_sample_args["alpha"])
-        elif not config['repeatable']:
-            sampler = Sampler(phases, built_datasets, train_neg_sample_args['distribution'], train_neg_sample_args["alpha"])
-        else:
-            sampler = RepeatableSampler(phases, dataset, train_neg_sample_args['distribution'], train_neg_sample_args["alpha"])
+    train_neg_sample_args = config["train_neg_sample_args"]
+    valid_neg_sample_args = config["valid_neg_sample_args"]
+    test_neg_sample_args = config["test_neg_sample_args"]
+    repeatable = config["repeatable"]
+    base_sampler = _create_sampler(
+        dataset,
+        built_datasets,
+        train_neg_sample_args["distribution"],
+        repeatable,
+        train_neg_sample_args["alpha"],
+    )
+    train_sampler = base_sampler.set_phase("train") if base_sampler else None
 
-        train_sampler = sampler.set_phase('train')
+    valid_sampler = _create_sampler(
+        dataset,
+        built_datasets,
+        valid_neg_sample_args["distribution"],
+        repeatable,
+        base_sampler=base_sampler,
+    )
+    valid_sampler = valid_sampler.set_phase("valid") if valid_sampler else None
 
-    if eval_neg_sample_args['distribution'] != 'none':
-        if sampler is None:
-            if not config['repeatable']:
-                sampler = Sampler(phases, built_datasets, eval_neg_sample_args['distribution'])
-            else:
-                sampler = RepeatableSampler(phases, dataset, eval_neg_sample_args['distribution'])
-        else:
-            sampler.set_distribution(eval_neg_sample_args['distribution'])
-        valid_sampler = sampler.set_phase('valid')
-        test_sampler = sampler.set_phase('test')
-
+    test_sampler = _create_sampler(
+        dataset,
+        built_datasets,
+        test_neg_sample_args["distribution"],
+        repeatable,
+        base_sampler=base_sampler,
+    )
+    test_sampler = test_sampler.set_phase("test") if test_sampler else None
+    
     return train_sampler, valid_sampler, test_sampler
