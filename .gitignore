@@ -4,3 +4,6 @@ log/*
 saved/*
 certification.json
 *.out
+*.log
+*.pth
+log_tensorboard/*
