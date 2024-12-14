@@ -4,7 +4,7 @@ from pathlib import Path
 import os.path 
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
-from recbole.model.general_recommender import LightGCN, BPR
+from recbole.model.general_recommender import LightGCN, BPR, ENMF
 from recbole.trainer import Trainer
 from recbole.utils import init_seed, init_logger
 
@@ -22,7 +22,7 @@ def main():
     config = Config(model=model_name_g, dataset=dataset_name_g)
     config["metrics"].append("GAUC")
     config["topk"] = [10, 20, 40]
-    config["reproducibility"] = False
+    config["reproducibility"] = True
     config["show_progress"] = False
     config["worker"] = 8
     for i in dict(args_g):
@@ -30,6 +30,7 @@ def main():
             config[i] = int(args_g[i])
         else:
             config[i] = args_g[i]
+    config['valid_metric'] = 'Recall@20'
     # init random seed
     init_seed(config['seed'], config['reproducibility'])
     # logger initialization
@@ -50,6 +51,7 @@ def main():
     model_dict = {
         'LightGCN': LightGCN,
         'BPR': BPR,
+        'ENMF': ENMF
     }
     model = model_dict[model_name_g](config, train_data.dataset).to(config['device'])
     logger.info(model)
@@ -63,8 +65,9 @@ def main():
     # model evaluation
     test_result = trainer.evaluate(test_data)
     result_values = []
-    for key in args_g:
-        result_values.append(args_g[key])
+    if len(args_g.keys()) > 0:
+        for key in args_g:
+            result_values.append(args_g[key])
     for key in best_valid_result:
         result_values.append(best_valid_result[key])
     for key in test_result:
@@ -78,7 +81,7 @@ def main():
         path = Path(file_name)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_name, 'w') as f:
-            f.write(','.join(best_valid_result.keys()) + ',' + ','.join(test_result.keys()) + '\n')
+            f.write(','.join(args_g.keys())  + ',' + ','.join(best_valid_result.keys()) + ',' + ','.join(test_result.keys()) + '\n')
             f.write(','.join(map(str, result_values)) + '\n')
        
     

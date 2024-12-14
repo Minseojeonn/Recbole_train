@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH --gpus=1
+#SBATCH --cpus-per-gpu=8
+#SBATCH -J ENMF_epnions
+
+for negative_socre in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+do
+    for dropout_rate in 0.1 0.3 0.5 0.7
+    do
+        for mlp_embedding_size in 32 64 
+        do
+            for lr in 0.01 0.001
+            do
+                python -m train --model_name ENMF --dataset_name epinions --learning_rate $lr --embedding_size $mlp_embedding_size --dropout_prob $dropout_rate --negative_score $negative_socre 
+            done
+        done
+    done
+done
+
+python -m notify ENMF epinions
+exit 0
