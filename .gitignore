@@ -6,4 +6,5 @@ certification.json
 *.out
 *.log
 *.pth
+*.csv
 log_tensorboard/*

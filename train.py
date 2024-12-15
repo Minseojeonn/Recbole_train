@@ -106,7 +106,8 @@ def main():
     for key in test_result:
         result_values.append(test_result[key])
     
-    file_name = f'./experiments/{model_name_g}_{dataset_name_g}.csv'
+    ssed = config['seed']
+    file_name = f'./experiments/{model_name_g}_{dataset_name_g}_{ssed}.csv'
     if os.path.isfile(file_name):
         with open(file_name, 'a') as f:
             f.write(','.join(map(str, result_values)) + '\n')

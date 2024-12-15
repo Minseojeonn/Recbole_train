@@ -6,9 +6,9 @@
 #SBATCH --chdir=../
 for embed_size in 32 64
 do
-    for lr in 0.01 0.001
+    for lr in 0.01
     do
-        python -m train --model_name BPR --dataset_name ml-1m --learning_rate $lr --embedding_size $embed_size
+        python -m train --model_name BPR --dataset_name ml-1m --learning_rate $lr --embedding_size $embed_size --valid_metric GAUC 
     done
 done
 

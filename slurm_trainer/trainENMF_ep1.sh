@@ -4,15 +4,15 @@
 #SBATCH -J ENMF_epnions
 #SBATCH -o slurm_logs/%x-%j.out
 #SBATCH --chdir=../
-for negative_socre in 0.001 0.005  
+for negative_socre in 0.3 0.5 0.7 0.9
 do
-    for dropout_rate in 0.1 0.3 0.5
+    for dropout_rate in 0.1 0.3 0.5 0.7 
     do
         for mlp_embedding_size in 32 64 
         do
-            for lr in 0.01 0.001
+            for lr in 0.01
             do
-                python -m train --model_name ENMF --dataset_name epinions --learning_rate $lr --embedding_size $mlp_embedding_size --dropout_prob $dropout_rate --negative_score $negative_socre 
+                python -m train --model_name ENMF --dataset_name epinions --learning_rate $lr --embedding_size $mlp_embedding_size --dropout_prob $dropout_rate --negative_score $negative_socre --valid_metric GAUC 
             done
         done
     done
