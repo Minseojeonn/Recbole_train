@@ -7,11 +7,11 @@ from recbole_debias.config import Config as Config_debias
 from recbole.data import create_dataset, data_preparation
 from recbole.model.general_recommender import LightGCN, BPR, ENMF
 from recbole.trainer import Trainer
-from recbole_debias.trainer import DebiasTrainer
+from recbole_debias.trainer import DebiasTrainer, WRMFTrainer
 from recbole.utils import init_seed, init_logger
 from recbole_debias.data import create_dataset as create_dataset_debias
 from recbole_debias.data import data_preparation as data_preparation_debias
-from recbole_debias.model.debiased_recommender import MF 
+from recbole_debias.model.debiased_recommender import MF, WRMF
 
 def avoid_duple(model_name='LightGCN', dataset_name='ml-100k', **args):
     global model_name_g, dataset_name_g
@@ -30,12 +30,15 @@ def main():
         'ENMF': ENMF
     }
     recbole_debias = {
-        'MF': MF
+        'MF': MF,
+        "WRMF": WRMF
     }
     if model_name_g in recbole_origin:
         config = Config(model=model_name_g, dataset=dataset_name_g)
     else:
         config = Config_debias(model=model_name_g, dataset=dataset_name_g)
+        if model_name_g == "WRMF":
+            config['normalize_all'] = False
     config["metrics"].append("GAUC")
     config["topk"] = [10, 20, 40]
     config["reproducibility"] = True
@@ -73,7 +76,8 @@ def main():
         'LightGCN': LightGCN,
         'BPR': BPR,
         'ENMF': ENMF,
-        'MF': MF
+        'MF': MF,
+        'WRMF': WRMF
     }
     model = model_dict[model_name_g](config, train_data.dataset).to(config['device'])
     logger.info(model)
@@ -81,6 +85,8 @@ def main():
     # trainer loading and initialization
     if model_name_g in recbole_origin:
         trainer = Trainer(config, model)
+    elif model_name_g == "WRMF":
+        trainer = WRMFTrainer(config, model, train_data, dataset)
     else:
         trainer = DebiasTrainer(config, model)
 

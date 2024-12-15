@@ -21,7 +21,58 @@ from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_
 
 DebiasTrainer = Trainer
 
+class WRMFTrainer(DebiasTrainer):
+    def __init__(self, config, model, train_data, dataset):
+        super(WRMFTrainer, self).__init__(config, model)
+        user_id = []
+        item_id = []
+        rating = []
+        for i in train_data:
+            user_id.append(i.user_id)
+            item_id.append(i.item_id)
+            rating.append(i.rating)
+        user_id = torch.concat(user_id)
+        item_id = torch.concat(item_id)
+        rating = torch.concat(rating)
+        self.rating_matrix = torch.sparse_coo_tensor(torch.stack([user_id, item_id]), rating, (dataset.n_users, dataset.n_items)).to(config['device'])
+        #self.adj_matrix = torch.sparse_coo_tensor(torch.stack([user_id, item_id]), torch.ones_like(rating), (dataset.n_users, dataset.n_items))
+        
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
+        r"""Train the model in an epoch
 
+        Args:
+            train_data (DataLoader): The train data.
+            epoch_idx (int): The current epoch id.
+            loss_func (function): The loss function of :attr:`model`. If it is ``None``, the loss function will be
+                :attr:`self.model.calculate_loss`. Defaults to ``None``.
+            show_progress (bool): Show the progress of training epoch. Defaults to ``False``.
+
+        Returns:
+            float/tuple: The sum of loss returned by all batches in this epoch. If the loss in each batch contains
+            multiple parts and the model return these multiple parts loss instead of the sum of loss, it will return a
+            tuple which includes the sum of loss in each part.
+        """
+        self.model(self.rating_matrix)
+        total_loss = self.model.calculate_loss()
+        return total_loss
+
+    def _valid_epoch(self, valid_data, show_progress=False):
+        r"""Valid the model with valid data
+
+        Args:
+            valid_data (DataLoader): the valid data.
+            show_progress (bool): Show the progress of evaluate epoch. Defaults to ``False``.
+
+        Returns:
+            float: valid score
+            dict: valid result
+        """
+        valid_result = self.evaluate(
+            valid_data, load_best_model=False, show_progress=show_progress
+        )
+        valid_score = calculate_valid_score(valid_result, self.valid_metric)
+        return valid_score, valid_result
+    
 class DICETrainer(DebiasTrainer):
     r"""
 

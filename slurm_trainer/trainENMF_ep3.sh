@@ -4,7 +4,7 @@
 #SBATCH -J ENMF_epnions
 #SBATCH -o slurm_logs/%x-%j.out
 #SBATCH --chdir=../
-for negative_socre in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+for negative_socre in 0.05 
 do
     for dropout_rate in 0.1 0.3 0.5 0.7
     do
