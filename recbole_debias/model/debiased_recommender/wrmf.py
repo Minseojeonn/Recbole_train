@@ -35,11 +35,10 @@ class WRMF(DebiasedRecommender):
         self.item_weight = config['alpha']
         self.reg_weight = config['lambda']
         self.device = config['device']
-        # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
-        init.xavier_normal_(self.user_embedding.weight)
-        init.xavier_normal_(self.item_embedding.weight)
+        init.xavier_uniform_(self.user_embedding.weight)
+        init.xavier_uniform_(self.item_embedding.weight)
         # matrix
         # dummy loss
         self.dummy_loss = torch.tensor(0.0, requires_grad=True)
@@ -48,7 +47,7 @@ class WRMF(DebiasedRecommender):
         
 
 
-    def compute_xu(self, Y, Wu, Au, lambda_):
+    def update(self, Y, Wu, Au, lambda_):
         """
         Update user factors using weighted regularized least squares.
         Y: item matrix
@@ -60,25 +59,14 @@ class WRMF(DebiasedRecommender):
         W = torch.diag(Wu).to(self.device)  # Ensure Wu is diagonal
         regularization = lambda_ * torch.eye(Y.size(1), device=Y.device, dtype=Y.dtype).to(self.device)
         YtWY = Y.T @ W @ Y
+        M = YtWY + regularization
+        M_inv = torch.linalg.inv(M)
         YtWAu = Y.T @ W @ Au
-        Xu = torch.linalg.solve(YtWY + regularization, YtWAu).to(self.device)
+        Xu = M_inv @ YtWAu
+        # YtWAu = Y.T @ W @ Au
+        # Xu = torch.linalg.solve(YtWY + regularization, YtWAu).to(self.device)
+        
         return Xu
-
-    def compute_yi(self, X, Wi, Ai, lambda_):
-        """
-        Update item factors using weighted regularized least squares.
-        X: user matrix
-        Wi: diagonal weight matrix for a specific item
-        Ai: interaction vector for a specific item
-        lambda_: regularization parameter
-        """
-        W = torch.diag(Wi)  # Ensure Wi is diagonal
-        regularization = lambda_ * torch.eye(X.size(1), device=X.device, dtype=X.dtype).to(self.device)
-        XtWX = X.T @ W @ X
-        XtWAi = X.T @ W @ Ai
-        Yi = torch.linalg.solve(XtWX + regularization, XtWAi).to(self.device)
-        return Yi
-
     def get_user_embedding(self, user):
         r""" Get a batch of user embedding tensor according to input user's id.
 
@@ -109,13 +97,15 @@ class WRMF(DebiasedRecommender):
 
             # Update user factors directly in place
             for i, Ri in enumerate(rating_matrix):
-                Wi = 1 + self.item_weight * Ri.to_dense()  # Define weight vector for user i       
-                user_e[i] = self.compute_xu(item_e, Wi, Ri, self.reg_weight)  # Update user embedding in place
+                Wi = 1 + self.item_weight * Ri.to_dense()  # Define weight vector for user i      
+                Ri = torch.where(Ri.to_dense() > 0 , 1.0, 0.0)
+                user_e[i] = self.update(item_e, Wi, Ri, self.reg_weight)  # Update user embedding in place
 
             # Update item factors directly in place
             for j, Rj in enumerate(rating_matrix.T):
                 Wj = 1 + self.item_weight * Rj.to_dense()  # Define weight vector for item j
-                item_e[j] = self.compute_yi(user_e, Wj, Rj, self.reg_weight)  # Update item embedding in place
+                Rj = torch.where(Rj.to_dense() > 0 , 1.0, 0.0)
+                item_e[j] = self.update(user_e, Wj, Rj, self.reg_weight)  # Update item embedding in place
             
         return user_e, item_e
 
@@ -127,7 +117,7 @@ class WRMF(DebiasedRecommender):
         item = interaction[self.ITEM_ID]
         user_e = self.get_user_embedding(user)
         item_e = self.get_item_embedding(item)
-        score = torch.sum(user_e * item_e, dim=1)
+        score = user_e @ item_e.T
         return score
 
     def full_sort_predict(self, interaction):

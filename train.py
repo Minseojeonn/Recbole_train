@@ -39,17 +39,19 @@ def main():
         config = Config_debias(model=model_name_g, dataset=dataset_name_g)
         if model_name_g == "WRMF":
             config['normalize_all'] = False
+            config['load_col']['inter'].append('rating')
     config["metrics"].append("GAUC")
     config["topk"] = [10, 20, 40]
     config["reproducibility"] = True
     config["show_progress"] = False
     config["worker"] = 8
+    config['valid_metric'] = 'Recall@20'
     for i in dict(args_g):
         if str(args_g[i]).isdigit():
             config[i] = int(args_g[i])
         else:
             config[i] = args_g[i]
-    config['valid_metric'] = 'Recall@20'
+    
     # init random seed
     init_seed(config['seed'], config['reproducibility'])
     # logger initialization
